@@ -1,3 +1,7 @@
-pyTelegramBotAPI
-psutil
-Flask
+gradio==5.23.3
+fastapi==0.115.11
+uvicorn==0.34.0
+python-dotenv==1.0.1
+requests==2.32.3
+Pillow==11.1.0
+nodejs-wheel==22.20.0

@@ -1,0 +1,17 @@
+PRAGMA foreign_keys = ON;
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)));
+CREATE TABLE IF NOT EXISTS admins (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS countries (iso TEXT PRIMARY KEY, name TEXT NOT NULL, calling_code TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS services (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS inventory (id INTEGER PRIMARY KEY, number TEXT NOT NULL UNIQUE, country_iso TEXT NOT NULL REFERENCES countries(iso), calling_code TEXT NOT NULL, service_id INTEGER NOT NULL REFERENCES services(id), price INTEGER NOT NULL CHECK(price>=0), status TEXT NOT NULL DEFAULT 'AVAILABLE' CHECK(status IN ('AVAILABLE','RESERVED','SOLD','DISABLED')), created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE INDEX IF NOT EXISTS inventory_browse ON inventory(service_id,country_iso,status,id);
+CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), listing_id INTEGER NOT NULL REFERENCES inventory(id), price INTEGER NOT NULL, currency TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('PENDING_PAYMENT','PAYMENT_SUBMITTED','UNDER_REVIEW','APPROVED','REJECTED','CANCELLED','REFUNDED','EXPIRED')), created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), expires_at TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE INDEX IF NOT EXISTS orders_user ON orders(user_id,created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS one_live_order_per_listing ON orders(listing_id) WHERE status IN ('PENDING_PAYMENT','PAYMENT_SUBMITTED','UNDER_REVIEW');
+CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY, order_id TEXT NOT NULL UNIQUE REFERENCES orders(id), reference TEXT NOT NULL UNIQUE, status TEXT NOT NULL, refund_note TEXT, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS payment_submissions (id INTEGER PRIMARY KEY, order_id TEXT NOT NULL REFERENCES orders(id), file_id TEXT NOT NULL, file_unique_id TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS activity_logs (id INTEGER PRIMARY KEY, admin_id TEXT NOT NULL, action TEXT NOT NULL, record_type TEXT NOT NULL, record_id TEXT NOT NULL, before_json TEXT, after_json TEXT, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY, admin_id TEXT NOT NULL, message TEXT NOT NULL, successful INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS backups (id INTEGER PRIMARY KEY, filename TEXT NOT NULL UNIQUE, sha256 TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+INSERT OR IGNORE INTO services(id,name) VALUES (1,'Voice and SMS service');

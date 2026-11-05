@@ -1,0 +1,5 @@
+{
+  "name": "country-number-marketplace", "version": "0.1.0", "private": true, "type": "module", "engines": {"node": ">=22.5"},
+  "scripts": {"start": "node bot/index.js", "test": "node --test tests/*.test.js"},
+  "dependencies": {"dotenv": "16.4.7", "libphonenumber-js": "1.11.20", "telegraf": "4.16.3"}
+}
